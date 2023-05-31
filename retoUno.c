@@ -3,7 +3,14 @@
 #include<stdlib.h>
 #include<string.h>
 
-#define TAMANO 
+#define continuar printf("Presione cualquier tecla para continuar\n");\
+                  getch();\
+                  system("cls");
+
+typedef enum RET{
+    RET_OK,
+    RET_FAIL
+} RET;
 
 // Structs para los diferentes datos: producto, fechas y registro ventas
 typedef struct 
@@ -43,13 +50,13 @@ typedef struct
     tComprador comprador;
     float totalVentas;
 } tventas;
-
+/* 
 void continuar(){
 
     printf("Presione cualquier tecla para continuar\n");
     getch();
     system("cls");
-}
+} */
 
 //Creación del producto en un archivo.txt
 void productosCreados(){
@@ -111,9 +118,6 @@ void crearProductos(){
     tproducto productos;
     int ultimoId = obtenerIdProductos();
     productos.idProducto = ultimoId +1;
-    //printf("Ingrese el Id del producto: ");
-    //scanf("%i", &productos.idProducto);
-    //fflush(stdin);
     printf("Ingrese el nombre del producto: ");
     gets(productos.nombreProducto);
     printf("Ingrese el precio del producto: ");
@@ -123,7 +127,7 @@ void crearProductos(){
     fflush(stdin);
     fwrite(&productos, sizeof(tproducto), 1, archivo);
     fclose(archivo);
-    continuar();
+    continuar;
 }
 
 
@@ -145,13 +149,12 @@ void listarProductos(){
         fread(&productos, sizeof(tproducto), 1, archivo);
     }
     fclose(archivo);
-    continuar();
+    continuar;
 }
 
 //Manejo menú de inventario de los productos
 void inventario(){
     int opcInv;
-    //productosCreados();
     do
     {
         printf("¿Que desea hacer en el inventario?\n");
@@ -173,7 +176,7 @@ void inventario(){
             break;
         }
     } while (opcInv!=3);
-   continuar();
+   continuar;
 }
 
 
@@ -211,8 +214,12 @@ int obtenerIdVentas(){
 
 }
 
-//Buscar el producto por el Id ingresado para ver si se encuentra en inventario
-int buscarProductoId(int idVendido, tproducto* productoEncontrado){
+
+/* 
+Nombre:
+Parametros: id, lista
+Retuns: OK RET_OK, FAIL RET_FAIL */
+RET buscarProductoId(int idVendido, tproducto* productoEncontrado){
 
     FILE* archivo = fopen("inventario.dat", "rb");
     if (archivo == NULL) {
@@ -225,18 +232,18 @@ int buscarProductoId(int idVendido, tproducto* productoEncontrado){
         if (productos.idProducto == idVendido) {
             *productoEncontrado = productos;
             fclose(archivo);
-            return 1;
+            return RET_OK;
         }
         fread(&productos, sizeof(tproducto), 1, archivo);
     }
  
     fclose(archivo);
-    return 0;
+    return RET_FAIL;
 }
 
 // Modificar Cantidad en el inventario de Productos 
 
-void modificarCantProductos(int idVendido, int cantVendida){
+void modificarCantProductos(tproducto *productoEncontrado){
 
     FILE* archivo = fopen("inventario.dat", "rb+");
     if (archivo == NULL) {
@@ -244,31 +251,21 @@ void modificarCantProductos(int idVendido, int cantVendida){
     }
 
     tproducto productos;
-    fread(&productos, sizeof(tproducto), 1, archivo);
 
-    /*if (idVendido==productos.idProducto)
+    while (fread(&productos, sizeof(tproducto), 1, archivo)==1)
     {
-        productos.cantProducto-=cantVendida;
+        if (productoEncontrado->idProducto==productos.idProducto)
+    {
+        productos.cantProducto=productoEncontrado->cantProducto;
         fseek(archivo, -sizeof(tproducto),SEEK_CUR);
         fwrite(&productos, sizeof(tproducto), 1, archivo);
-    }*/
-
-    /*while (feof(archivo))
-    {
-        if (idVendido==productos.idProducto)
-        {
-            productos.cantProducto-=cantVendida;
-            fseek(archivo, -sizeof(tproducto),SEEK_CUR);
-            fwrite(&productos, sizeof(tproducto), 1, archivo);
-        } 
-        fseek(archivo, 0, SEEK_CUR);
-        
+    } 
+    fseek(archivo, 0, SEEK_CUR);
     }
-    
-            
+
+    //fread(&productos, sizeof(tproducto), 1, archivo);
     fclose(archivo);
-    //return 0;
-}*/
+}
 
 
 void registrarVentas(){
@@ -298,7 +295,7 @@ void registrarVentas(){
         scanf("%i", &idVendido);
         fflush(stdin);
         tproducto productoEncontrado;
-        if (buscarProductoId(idVendido, &productoEncontrado))
+        if (buscarProductoId(idVendido, &productoEncontrado) == RET_OK)
         {
             tprodVendido productosVendidos;
             strcpy(productosVendidos.nomProVendido, productoEncontrado.nombreProducto);
@@ -310,22 +307,23 @@ void registrarVentas(){
                 productosVendidos.precioUnidad = productoEncontrado.precioProducto;
                 productosVendidos.precioTotal=productosVendidos.precioUnidad*productosVendidos.cantidadVendida;
                 ventsRegistradas.totalVentas+=productosVendidos.precioTotal;
-                int cantVendida=productosVendidos.cantidadVendida;
-                modificarCantProductos(idVendido, cantVendida);
                 ventsRegistradas.comprador.productosVendidos[i]=productosVendidos;
+                productoEncontrado.cantProducto-=productosVendidos.cantidadVendida;
+                modificarCantProductos(&productoEncontrado);
                 printf("Venta registrada de manera exitosa\n");
             }else{
                 printf("La cantidad vendida no puede ser mayor a la cantidad disponible\n");
+                i--;
                 }
         }else{
                 printf("No existe dicho Id de producto\n");
-             }
-                 
+                i--;
+             }        
     }
     ventsRegistradas.comprador.numActProd = numProVen;    
     fwrite(&ventsRegistradas, sizeof(tventas), 1, archivo1);
     fclose(archivo1);
-    continuar();
+    continuar;
 }
 
 //Listado del Registro de las Ventas 
@@ -349,17 +347,16 @@ void listarVentas(){
         ventasRegistradas.fechaVenta.aa, ventasRegistradas.comprador.nombreComprador);
         for (int i = 0; i < ventasRegistradas.comprador.numActProd; i++)
         {
-            //tprodVendido prodVendido = ventasRegistradas.comprador.productosVendidos[i];
             printf("\t|> %i: %s | CANT: %i | PRE. UNI: %.2f | PRECIO TOTAL: %.2f |\n", i+1, ventasRegistradas.comprador.productosVendidos[i].nomProVendido, 
             ventasRegistradas.comprador.productosVendidos[i].cantidadVendida, ventasRegistradas.comprador.productosVendidos[i].precioUnidad,
-             ventasRegistradas.comprador.productosVendidos[i].precioTotal);
+            ventasRegistradas.comprador.productosVendidos[i].precioTotal);
         }
         printf("PRECIO TOTAL VENTA: %.2f\n", ventasRegistradas.totalVentas);
         printf("\n");
         fread(&ventasRegistradas, sizeof(tventas), 1, archivo);
     }
     fclose(archivo);
-    continuar();
+    continuar;
 }
 
 int main(){

@@ -50,13 +50,6 @@ typedef struct
     tComprador comprador;
     float totalVentas;
 } tventas;
-/* 
-void continuar(){
-
-    printf("Presione cualquier tecla para continuar\n");
-    getch();
-    system("cls");
-} */
 
 //Creación del producto en un archivo.txt
 void productosCreados(){
